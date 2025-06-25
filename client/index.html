@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Predictor de Precios de Propiedades</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Roboto', sans-serif;
+            line-height: 1.6;
+            color: #212529;
+            background-color: #f5f7fa;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        h1 {
+            color: #4361ee;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            font-weight: 700;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #212529;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border 0.3s ease;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #4895ef;
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+        
+        button {
+            background-color: #4361ee;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        button:hover {
+            background-color: #3f37c9;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        #result {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #4361ee;
+            display: none;
+        }
+        
+        .price {
+            font-size: 2rem;
+            color: #3f37c9;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 1rem 0;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 4px solid #4361ee;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .card {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>Calculadora de Precio de Propiedades</h1>
+            
+            <form id="form">
+                <div class="form-group">
+                    <label for="Rooms">Habitaciones</label>
+                    <input type="number" id="Rooms" name="Rooms" placeholder="Ej: 3" required min="1">
+                </div>
+                
+                <div class="form-group">
+                    <label for="Bathroom">Baños</label>
+                    <input type="number" id="Bathroom" name="Bathroom" placeholder="Ej: 2" required min="1">
+                </div>
+                
+                <div class="form-group">
+                    <label for="Landsize">Metros cuadrados</label>
+                    <input type="number" id="Landsize" name="Landsize" placeholder="Ej: 150" required min="1">
+                </div>
+                
+                <div class="form-group">
+                    <label for="Distance">Distancia al centro (km)</label>
+                    <input type="number" id="Distance" name="Distance" placeholder="Ej: 5" required min="0" step="0.1">
+                </div>
+                
+                <div class="form-group">
+                    <label for="Car">Espacio/s para vehículos</label>
+                    <input type="number" id="Car" name="Car" placeholder="Ej: 1" required min="0">
+                </div>
+                
+                <div class="form-group">
+                    <label for="Type">Tipo de propiedad</label>
+                    <select id="Type" name="Type" required>
+                        <option value="" disabled selected>Seleccione un tipo</option>
+                        <option value="h">Casa</option>
+                        <option value="u">Departamento</option>
+                        <option value="t">Townhouse</option>
+                    </select>
+                </div>
+                
+                <button type="button" onclick="predict()">Calcular Precio Estimado</button>
+            </form>
+            
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Calculando...</p>
+            </div>
+            
+            <div id="result">
+                <p>Precio estimado:</p>
+                <p class="price" id="price">$0</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function predict() {
+            const form = document.getElementById("form");
+            const loading = document.getElementById("loading");
+            const result = document.getElementById("result");
+            const priceElement = document.getElementById("price");
+            
+
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+            
+
+            loading.style.display = "block";
+            result.style.display = "none";
+            
+            const data = {
+                Rooms: parseInt(form.Rooms.value),
+                Bathroom: parseInt(form.Bathroom.value),
+                Landsize: parseInt(form.Landsize.value),
+                Distance: parseFloat(form.Distance.value),
+                Car: parseInt(form.Car.value),
+                Type: form.Type.value
+            };
+            
+            try {
+                const response = await fetch("http://localhost:5000/predict", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(data)
+                });
+                
+                if (!response.ok) {
+                    throw new Error("Error en la respuesta del servidor");
+                }
+                
+                const resultData = await response.json();
+                priceElement.textContent = `$${resultData.price.toLocaleString('es-AR')}`;
+                result.style.display = "block";
+                
+            } catch (error) {
+                priceElement.textContent = "Error";
+                const errorMessage = document.createElement("p");
+                errorMessage.textContent = "No se pudo calcular el precio. Intente nuevamente.";
+                errorMessage.style.color = "#dc3545";
+                result.appendChild(errorMessage);
+                result.style.display = "block";
+                console.error("Error:", error);
+                
+            } finally {
+                loading.style.display = "none";
+            }
+        }
+    </script>
+</body>
+</html>
